@@ -1,5 +1,3 @@
-KSAML
-=====
 This project contains the endpoints for SAML-related functionality used throughout KDMS. It is based off the following template project, https://github.com/mkyong/spring4-mvc-gradle-annotation-hello-world
 
 ### 1. Technologies used
