@@ -1,0 +1,8 @@
+<Context path="/ksaml" docBase="/var/lib/kdms/webapps/ksaml" useNaming="true" unpackWAR="false" reloadable="false">
+  <Environment name="install.folder" value="/var/lib/kdms/webapps/ksaml" type="java.lang.String"/>
+  <Environment name="core.db.host" value="localhost" type="java.lang.String"/>
+  <Environment name="core.db.port" value="3306" type="java.lang.String"/>
+  <Environment name="core.db.name" value="zodiac" type="java.lang.String"/>
+  <Environment name="core.db.user.name" value="someuser" type="java.lang.String"/>
+  <Environment name="core.db.encrypted.password" value="somepassword" type="java.lang.String"/>
+</Context>

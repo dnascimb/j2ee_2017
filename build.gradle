@@ -1,0 +1,142 @@
+plugins {
+  id "nebula.rpm" version "4.4.0"
+}
+
+apply plugin: 'java'
+apply plugin: 'war'
+apply plugin: 'eclipse-wtp'
+apply plugin: 'nebula.rpm'
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+// apply compiler options
+gradle.taskGraph.whenReady( { graph ->
+  tasks.withType(JavaCompile).each { javac ->
+    javac.configure {
+      sourceCompatibility jdkVersion
+      targetCompatibility jdkVersion
+      options.encoding = encodingType
+    }
+  }
+})
+
+javadoc {
+  options.addStringOption('Xdoclint:none', '-quiet')
+  options.encoding = encodingType
+}
+
+configurations.all {
+  exclude group: 'commons-logging', module: 'commons-logging'
+}
+
+// Overwrite default dependency versions
+def commonsCodecVersion = "1.10"
+def c3p0Version = "0.9.5.2"
+def javaxServletApiVersion = "3.1.0"
+def junitVersion = "4.12"
+def jclOverSlf4jVersion = "1.7.14"
+def mybatisVersion = "3.4.4"
+def mybatisSpringVersion = "1.3.1"
+def mysqlConnectorJavaVersion = "5.1.35"
+def springVersion = "4.3.8.RELEASE"
+def apacheCommonsVersion = "3.6"
+def bouncyCastleVersion = "1.46"
+
+dependencies {
+
+    compile 'org.springframework:spring-webmvc:' + springVersion
+    compile 'org.springframework:spring-jdbc:' + springVersion
+    compile 'org.springframework:spring-test:' + springVersion
+
+    compile 'javax.servlet:jstl:' + jstlVersion
+
+    compile 'org.slf4j:jcl-over-slf4j:' + jclOverSlf4jVersion
+    compile 'ch.qos.logback:logback-classic:' + logbackVersion
+
+    compile 'commons-codec:commons-codec:' + commonsCodecVersion
+    compile 'commons-dbcp:commons-dbcp:' + commonsDbcpVersion
+    compile 'com.mchange:c3p0:' + c3p0Version
+    compile 'org.apache.commons:commons-lang3:' + apacheCommonsVersion
+
+    compile 'org.mybatis:mybatis-spring:' + mybatisSpringVersion
+    compile 'org.mybatis:mybatis:' + mybatisVersion
+    compile 'mysql:mysql-connector-java:' + mysqlConnectorJavaVersion
+
+    testCompile 'junit:junit:' + junitVersion
+    providedCompile 'javax.servlet:javax.servlet-api:' + javaxServletApiVersion
+    compile 'org.bouncycastle:bcprov-jdk15on:' + bouncyCastleVersion
+
+}
+
+war {
+  manifest {
+    attributes(
+      'Manifest-Version'       : '1.0',
+      'Created-By'             : System.getProperty("user.name"),
+      'Organization'           : productOrg,
+      'Title'                  : 'Kollective SAML Service',
+      'Version'                : version,
+      'Build-Number'           : buildNumber
+    )
+  }
+}
+
+//For Eclipse IDE only
+eclipse {
+  wtp {
+    component {
+      //define context path, default to project folder name
+      contextPath = 'spring4'
+    }
+  }
+}
+
+
+task explodedWar(type: Copy) {
+    into "$buildDir/exploded"
+    with war
+}
+
+task rpm(type: Rpm) {
+  type 'BINARY'
+
+  packageName 'kdms-ksaml'
+  summary 'Kollective SAML SP/IDP Web Application'
+  packageDescription 'The Kollective SAML SP/IDP Web Application.'
+  license 'Copyright (c) 2017 Kollective Technology, Inc.  All rights reserved.'
+  packager 'Kollective Technology, Inc.'
+  packageGroup 'Applications/Internet'
+  url 'http://www.kollective.com/'
+
+  version releaseVersion
+  release buildNumber
+  os LINUX
+  user 'kdms'
+  permissionGroup 'kdms'
+
+  // Provide ability for RPM scripts to get version
+  installUtils 'VERSION=' + version + '-' + release
+  postInstall file('scripts/rpm/postInstall.sh')
+  
+  // TODO: exclude idpServer.crt and idpServer.key
+  
+  directory('/var/lib/kdms/webapps/ksaml')
+
+  into '/var/lib/kdms/webapps/ksaml'
+
+  from('build/exploded') {
+    into '/var/lib/kdms/webapps/ksaml'
+  }
+
+  from('build/libs') {
+    into '/var/lib/kdms/webapps/ksaml/libs'
+  }
+
+}
+
+war.dependsOn explodedWar
+rpm.dependsOn build
+
